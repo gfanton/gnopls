@@ -1,6 +1,7 @@
+⚠️ This version of `gnopls` has migrated [here](https://github.com/gnoverse/gnopls)
+
 # `gnopls`, the Gno language server
 
-⚠️  `gnopls` is in an experimental phase; use with caution.
 
 [![PkgGnoDev](https://pkg.gno.dev/badge/github.com/gfanton/gnopls)](https://pkg.gno.dev/github.com/gfanton/gnopls)
 
