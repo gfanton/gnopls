@@ -23,6 +23,9 @@ func gnoPkgToGo(gnomodPath string, logger *slog.Logger) (*packages.Package, erro
 	if err != nil {
 		return nil, err
 	}
+
+	logger.Error("mod file", "path", gnomodPath, "gnomod", gnomodFile.Module)
+
 	dir := filepath.Dir(gnomodPath)
 
 	// TODO: support subpkgs
@@ -62,7 +65,7 @@ func gnoPkgToGo(gnomodPath string, logger *slog.Logger) (*packages.Package, erro
 
 		// NeedName
 		Name:    bestName,
-		PkgPath: gnomodFile.Module.Mod.Path,
+		PkgPath: gnomodFile.Module.Mod.Path, // XXX(FIXME): `gnomodFile` can be nil
 
 		// NeedFiles
 		GoFiles:    gnoFiles,

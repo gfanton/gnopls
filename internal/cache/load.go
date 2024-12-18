@@ -29,6 +29,7 @@ import (
 	"github.com/gnoverse/gnopls/internal/util/immutable"
 	"github.com/gnoverse/gnopls/internal/util/pathutil"
 	"github.com/gnoverse/gnopls/internal/xcontext"
+	"github.com/gnoverse/gnopls/pkg/eventlogger"
 	"github.com/gnoverse/gnopls/pkg/resolver"
 )
 
@@ -126,6 +127,7 @@ func (s *Snapshot) load(ctx context.Context, allowNetwork bool, scopes ...loadSc
 
 	startTime := time.Now()
 
+	eventlogger.EventLoggerWrapper().Error("load scopes", "scopes", fmt.Sprintf("%+v", scopes), "query", query)
 	inv, cleanupInvocation, err := s.GoCommandInvocation(allowNetwork, &gocommand.Invocation{
 		WorkingDir: s.view.root.Path(),
 	})

@@ -619,54 +619,58 @@ func (s *Snapshot) initialize(ctx context.Context, firstAttempt bool) {
 	// parse, capture the parsing failure as a critical diagnostic.
 	var scopes []loadScope           // scopes to load
 	var modDiagnostics []*Diagnostic // diagnostics for broken go.mod files
-	addError := func(uri protocol.DocumentURI, err error) {
-		modDiagnostics = append(modDiagnostics, &Diagnostic{
-			URI:      uri,
-			Severity: protocol.SeverityError,
-			Source:   ListError,
-			Message:  err.Error(),
-		})
-	}
+	// addError := func(uri protocol.DocumentURI, err error) {
+	// 	modDiagnostics = append(modDiagnostics, &Diagnostic{
+	// 		URI:      uri,
+	// 		Severity: protocol.SeverityError,
+	// 		Source:   ListError,
+	// 		Message:  err.Error(),
+	// 	})
+	// }
 
-	if len(s.view.workspaceModFiles) > 0 {
-		for modURI := range s.view.workspaceModFiles {
-			// Verify that the modfile is valid before trying to load it.
-			//
-			// TODO(rfindley): now that we no longer need to parse the modfile in
-			// order to load scope, we could move these diagnostics to a more general
-			// location where we diagnose problems with modfiles or the workspace.
-			//
-			// Be careful not to add context cancellation errors as critical module
-			// errors.
-			fh, err := s.ReadFile(ctx, modURI)
-			if err != nil {
-				if ctx.Err() != nil {
-					return
-				}
-				addError(modURI, err)
-				continue
-			}
-			parsed, err := s.ParseMod(ctx, fh)
-			if err != nil {
-				if ctx.Err() != nil {
-					return
-				}
-				addError(modURI, err)
-				continue
-			}
-			if parsed.File == nil || parsed.File.Module == nil {
-				addError(modURI, fmt.Errorf("no module path for %s", modURI))
-				continue
-			}
-			moduleDir := filepath.Dir(modURI.Path())
-			// Previously, we loaded <modulepath>/... for each module path, but that
-			// is actually incorrect when the pattern may match packages in more than
-			// one module. See golang/go#59458 for more details.
-			scopes = append(scopes, moduleLoadScope{dir: moduleDir, modulePath: parsed.File.Module.Mod.Path})
-		}
-	} else {
-		scopes = append(scopes, viewLoadScope{})
-	}
+	// XXX(gno): disable mod view scope
+
+	// if len(s.view.workspaceModFiles) > 0 {
+	// 	for modURI := range s.view.workspaceModFiles {
+	// 		// Verify that the modfile is valid before trying to load it.
+	// 		//
+	// 		// TODO(rfindley): now that we no longer need to parse the modfile in
+	// 		// order to load scope, we could move these diagnostics to a more general
+	// 		// location where we diagnose problems with modfiles or the workspace.
+	// 		//
+	// 		// Be careful not to add context cancellation errors as critical module
+	// 		// errors.
+	// 		fh, err := s.ReadFile(ctx, modURI)
+	// 		if err != nil {
+	// 			if ctx.Err() != nil {
+	// 				return
+	// 			}
+	// 			addError(modURI, err)
+	// 			continue
+	// 		}
+	// 		parsed, err := s.ParseMod(ctx, fh)
+	// 		if err != nil {
+	// 			if ctx.Err() != nil {
+	// 				return
+	// 			}
+	// 			addError(modURI, err)
+	// 			continue
+	// 		}
+	// 		if parsed.File == nil || parsed.File.Module == nil {
+	// 			addError(modURI, fmt.Errorf("no module path for %s", modURI))
+	// 			continue
+	// 		}
+	// 		moduleDir := filepath.Dir(modURI.Path())
+	// 		// Previously, we loaded <modulepath>/... for each module path, but that
+	// 		// is actually incorrect when the pattern may match packages in more than
+	// 		// one module. See golang/go#59458 for more details.
+	// 		scopes = append(scopes, moduleLoadScope{dir: moduleDir, modulePath: parsed.File.Module.Mod.Path})
+	// 	}
+	// } else {
+	// 	scopes = append(scopes, viewLoadScope{})
+	// }
+
+	scopes = append(scopes, packageLoadScope(s.view.folder.Dir))
 
 	// If we're loading anything, ensure we also load builtin,
 	// since it provides fake definitions (and documentation)
@@ -805,6 +809,8 @@ func (s *Session) invalidateViewLocked(ctx context.Context, v *View, changed Sta
 // TODO(rfindley): pass in a narrower interface for the file.Source
 // (e.g. fileExists func(DocumentURI) bool) to make clear that this
 // process depends only on directory information, not file contents.
+
+// XXX(gno): should define correct root view, it should probably be the current directory
 func defineView(ctx context.Context, fs file.Source, folder *Folder, forFile file.Handle) (*viewDefinition, error) {
 	if err := checkPathValid(folder.Dir.Path()); err != nil {
 		return nil, fmt.Errorf("invalid workspace folder path: %w; check that the spelling of the configured workspace folder path agrees with the spelling reported by the operating system", err)

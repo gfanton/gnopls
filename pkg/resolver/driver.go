@@ -36,6 +36,8 @@ func Resolve(req *packages.DriverRequest, patterns ...string) (*packages.DriverR
 		targets = append(targets, filepath.Join(gnoRoot, "examples", "..."))
 	}
 
+	logger.Error("target", "target", targets)
+
 	pkgsCache := map[string]*packages.Package{}
 	res := packages.DriverResponse{}
 
